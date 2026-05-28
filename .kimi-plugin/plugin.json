@@ -1,0 +1,25 @@
+{
+  "name": "apex",
+  "version": "0.2.0-kimi.1",
+  "description": "Turn a rough request into an elite, grounded, human-gated prompt for an agentic coding task. Kimi Code port of the apex prompting system.",
+  "author": {
+    "name": "apex (Kimi Code port)"
+  },
+  "license": "MIT",
+  "keywords": [
+    "prompting",
+    "prompt-engineering",
+    "orchestrator",
+    "grounding",
+    "red-team",
+    "human-gated"
+  ],
+  "skills": "./skills/",
+  "skillInstructions": "apex runs on Kimi Code's native tools. Mapping: when the orchestrator dispatches the context-scout subagent, call the `Agent` tool with `subagent_type: \"explore\"`; when it dispatches the red-team-critic subagent, call `Agent` with `subagent_type: \"plan\"`; in both cases first read the matching role file under the apex skill's `agents/` directory and prepend its (frontmatter-stripped) body to the dispatch prompt. Script calls use the `Bash` tool with `PYTHONPATH` set to the apex skill directory (`${KIMI_SKILL_DIR}`). Clarifying questions use `AskUserQuestion`. The generated prompt is never auto-run — it is presented behind a human gate.",
+  "interface": {
+    "displayName": "apex",
+    "shortDescription": "Elite, grounded, human-gated prompt builder for coding tasks.",
+    "longDescription": "Invoke /skill:apex \"<rough idea>\" to turn a rough request into a verified, grounded prompt. apex clarifies intent, grounds in the repo via a read-only scout, drafts against archetype templates, red-teams the draft against a falsifiable rubric, refines on blocking defects, and presents a human-gated result. Never executes the generated prompt itself.",
+    "capabilities": ["Interactive", "Read", "Write"]
+  }
+}

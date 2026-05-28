@@ -1,0 +1,51 @@
+{
+  "state": {
+    "required": {
+      "run_id": "str",
+      "current_state": "str",
+      "flow": "str",
+      "stages": "dict",
+      "refine_passes": "int"
+    }
+  },
+  "context": {
+    "required": {
+      "repo_mode": "str",
+      "relevant_files": "list",
+      "conventions": "list",
+      "constraints": "list",
+      "entry_points": "list",
+      "conflicts": "list",
+      "untrusted_excerpts": "list",
+      "index": "list"
+    }
+  },
+  "critic": {
+    "required": {
+      "dimensions": "dict",
+      "defects": "list",
+      "verdict": "str"
+    }
+  },
+  "logentry": {
+    "required": {
+      "run_id": "str",
+      "stage": "str",
+      "ts": "str"
+    }
+  },
+  "eval": {
+    "required": {
+      "id": "str",
+      "rough_request": "str",
+      "expected_archetype": "str",
+      "must_have_dimensions": "list"
+    }
+  },
+  "evalresult": {
+    "required": {
+      "id": "str",
+      "failures": "list"
+    }
+  }
+}

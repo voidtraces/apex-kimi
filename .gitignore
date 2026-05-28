@@ -1,0 +1,10 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# apex run state (created at runtime in the project cwd, not part of the port)
+.apex/
+
+# OS / editor cruft
+.DS_Store
+*.swp
