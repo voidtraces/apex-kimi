@@ -29,5 +29,19 @@ Phase 0 of the port was a read-only feasibility gate. Findings were resolved aga
 3. Added a "Kimi Code Adaptation" header block; remapped the two subagent dispatches (GROUNDED?/VERIFIED stages) to built-in `explore`/`plan` with role-text injection.
 4. Generalized "for Claude Code" → "for the coding agent"; the state machine, scripts, schemas, and rubric are otherwise unchanged.
 
+## Quality enhancements A+B (closing the apex-on-Kimi quality gap)
+An investigation found the ~5–10% quality gap vs apex-on-Claude is caused by **model monoculture**: Claude runs the critic on a stronger model (`opus`) than the scout (`sonnet`), while Kimi runs both subagents (`explore`/`plan`) on the single available model (`kimi-for-coding` / Kimi-k2.6 — already Kimi's flagship). Kimi's *reasoning* is sound; it lacked a stronger second-tier critic, which let omissions and schema drift pass. Kimi 0.4.0's `Agent` tool exposes **no `model` param** and only one model is provisioned, so escalating the critic's model is blocked. Two model-independent fixes were added instead:
+
+- **A — deterministic enforcement** (`scripts/kimi_quality.py`, PORT-ADDED; upstream `validate.py` left byte-identical):
+  - `enforce_critic_schema(critic)` — rejects critic output where `dimensions` values aren't the strings `"yes"`/`"no"`, the `verdict` is inconsistent with the defects, defects are malformed, or stray top-level keys appear (caught Kimi emitting `{verdict:bool,defects:[]}` + a stray `refine_passes`). Drives a re-prompt of the critic.
+  - `lint_draft(draft)` — makes rubric COMPLETENESS deterministic: requires an Objective, ≥2 verifiable Success-criteria bullets, and Guardrails. Missing Objective/Success = HIGH (forces a refine); missing Guardrails = MEDIUM. No length floor (respects the minimum-structure rule).
+- **B — sharper critic** (in `skills/apex/SKILL.md` VERIFIED stage; `agents/red-team-critic.md` left verbatim): an *Adversarial Critic Addendum* prepended to the critic dispatch / inline self-critique — mandates the exact `yes`/`no` schema, forbids a lazy empty `defects` list (requires ≥3 concrete checks first), and requires a second AMBIGUITY/DETERMINISM pass.
+
+Wiring: VERIFIED now runs `pathcheck` **and** `kimi_quality`, merges lint defects into `critic.defects` (HIGH lint → COMPLETENESS=no → REFINE), and re-prompts on schema errors. This moves quality from model-judgment to rules, which is model-independent and would also harden apex on Claude.
+
+## What changed (port-authored files only; upstream copies stay verbatim)
+1. `skills/apex/SKILL.md` (converted from `commands/apex.md`): Kimi frontmatter; `${CLAUDE_PLUGIN_ROOT}` → `${KIMI_SKILL_DIR}/../..`; Kimi Code Adaptation block; subagent remap to `explore`/`plan`; **+ A/B quality layer wiring + Adversarial Critic Addendum**.
+2. `scripts/kimi_quality.py` — **new, additive**; the six upstream `scripts/*.py` remain byte-identical to source.
+
 ## Source integrity
-The original Claude Code plugin at `/home/nullx/.claude/plugins/cache/apex/apex/0.2.0` is read-only and untouched (verified by a before/after sha256 of the full tree).
+The original Claude Code plugin at `/home/nullx/.claude/plugins/cache/apex/apex/0.2.0` is read-only and untouched: no source `.py`/`.md`/`.json` content changed (verified by 0 content mismatches against the port's verbatim copies). The only session-time deltas in that tree are harness-managed runtime artifacts (`.in_use/*` plugin-use markers and `__pycache__` bytecode), not source edits.
