@@ -1,10 +1,10 @@
 # apex for Kimi Code
 
-**Turn a rough request into an elite, grounded, human-gated prompt — natively inside [Kimi Code](https://moonshotai.github.io/kimi-code/) 0.4.0.**
+**Turn a rough request into an elite, grounded, human-gated prompt — natively inside [Kimi Code](https://moonshotai.github.io/kimi-code/) (tested on 0.4.0 and 0.5.0).**
 
 apex is a prompt-engineering orchestrator. You give it a half-formed idea; it runs a disciplined pipeline — clarify intent, ground in your repo, draft against an archetype template, adversarially red-team the draft against a falsifiable rubric, refine only on real defects, and hand you a verified prompt behind a human gate. It **never auto-runs** the prompt it produces.
 
-This repository is a faithful port of apex (originally a Claude Code plugin) to **Kimi Code 0.4.0**, packaged as the skill `/skill:apex`. The reasoning machinery — the state machine, the prompting knowledge base, the deterministic grounding and refinement logic — is carried over unchanged; only the platform glue was adapted (see [Port notes](#the-kimi-port)).
+This repository is a faithful port of apex (originally a Claude Code plugin) to **Kimi Code**, packaged as the skill `/skill:apex`. Built on 0.4.0 and **verified working on both 0.4.0 and 0.5.0** (see [Compatibility](#compatibility)). The reasoning machinery — the state machine, the prompting knowledge base, the deterministic grounding and refinement logic — is carried over unchanged; only the platform glue was adapted (see [Port notes](#the-kimi-port)).
 
 ---
 
@@ -17,9 +17,15 @@ This repository is a faithful port of apex (originally a Claude Code plugin) to 
 
 ## Requirements
 
-- **Kimi Code 0.4.0** (the `kimi` binary, typically at `~/.kimi-code/bin/kimi`).
+- **Kimi Code 0.4.0 or 0.5.0** (the `kimi` binary, typically at `~/.kimi-code/bin/kimi`) — verified on both.
 - `python3` (standard library only — no third-party packages).
 - `rsync` (used by the installer for a clean, symlink-free copy).
+
+## Compatibility
+
+Verified working on **Kimi Code 0.4.0 and 0.5.0**. On each version, all primitives apex relies on are present — the native `Skill` tool, the `Agent` tool with the built-in `coder`/`explore`/`plan` subagent types, the `${KIMI_SKILL_DIR}` / `${KIMI_PLUGIN_ROOT}` injections, the `installed.json` plugin loader, and `AskUserQuestion` — and a live registry-loaded `/skill:apex` run drives the full state machine to `DONE` with a schema-clean, `verdict: OK` critic.
+
+Note for 0.5.0: `--prompt` can no longer be combined with `--yolo` (`error: Cannot combine --prompt with --yolo`). This does not affect apex — for non-interactive runs use `kimi -p "..."` on its own; `-p` already runs the full agentic loop.
 
 ## Install
 
