@@ -36,20 +36,30 @@ kimi --skills-dir /home/nullx/projects/apex-kimi/skills
 # then type:  /skill:apex add a --verbose flag to a hello-world python script
 ```
 
-## Install for real (user-approved step)
-Either install as a managed-style plugin or expose just the skills:
-- **Skills only:** symlink the two skill dirs into a discovered skills dir, e.g.
-  `ln -s /home/nullx/projects/apex-kimi/skills/apex ~/.kimi-code/skills/apex`
-  `ln -s /home/nullx/projects/apex-kimi/skills/elite-prompting ~/.kimi-code/skills/elite-prompting`
-- **As a plugin:** place this directory under `~/.kimi-code/plugins/managed/apex/` (it already carries `.kimi-plugin/plugin.json`).
+## Install (self-contained — survives deleting this checkout)
+Run the installer from this directory:
+```bash
+./install.sh
+```
+It copies the plugin into `~/.kimi-code/plugins/managed/apex/` (a real **copy, not a symlink**) and registers it in `~/.kimi-code/plugins/installed.json` — Kimi loads plugins from that registry; it does **not** auto-scan `plugins/managed/`, so registration is required. The install is fully self-contained: **you can delete or move this source checkout afterward and `/skill:apex` keeps working.** `installed.json` is backed up before editing, and re-running `install.sh` is idempotent.
 
-Then run `/skill:apex "<your rough idea>"` in any project.
+After installing, in Kimi run:
+```
+/plugins reload
+/skill:apex "<your rough idea>"
+```
+Override the location with `KIMI_CODE_HOME=/path ./install.sh` if Kimi lives elsewhere.
+
+To remove it:
+```bash
+./uninstall.sh   # deletes the managed copy + its installed.json entry (backs up first), then /plugins reload
+```
 
 ## Self-checks
 ```bash
-# Python layer imports + validates
-cd /home/nullx/projects/apex-kimi/skills/apex && \
-  PYTHONPATH=. python3 -c "from scripts import ctxstore,validate,pathcheck,verdict,log; \
+# Python layer imports + validates (run from the port root — scripts/ lives here)
+cd /home/nullx/projects/apex-kimi && \
+  PYTHONPATH=. python3 -c "from scripts import ctxstore,validate,pathcheck,verdict,log,kimi_quality; \
   print(validate.validate({'repo_mode':'none','relevant_files':[],'conventions':[],'constraints':[],'entry_points':[],'conflicts':[],'untrusted_excerpts':[],'index':[]},'context'))"
 # -> []
 
