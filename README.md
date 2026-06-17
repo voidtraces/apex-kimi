@@ -1,10 +1,10 @@
 # apex for Kimi Code
 
-**Turn a rough request into an elite, grounded, human-gated prompt — natively inside [Kimi Code](https://moonshotai.github.io/kimi-code/) (tested on 0.4.0, 0.5.0, and 0.16.0).**
+**Turn a rough request into an elite, grounded, human-gated prompt — natively inside [Kimi Code](https://moonshotai.github.io/kimi-code/) (tested on 0.4.0, 0.5.0, 0.16.0, and 0.17.1).**
 
 apex is a prompt-engineering orchestrator. You give it a half-formed idea; it runs a disciplined pipeline — clarify intent, ground in your repo, draft against an archetype template, adversarially red-team the draft against a falsifiable rubric, refine only on real defects, and hand you a verified prompt behind a human gate. It **never auto-runs** the prompt it produces.
 
-This repository is a faithful port of apex (originally a Claude Code plugin) to **Kimi Code**, packaged as the skill `/skill:apex`. Built on 0.4.0 and **verified working on 0.4.0, 0.5.0, and 0.16.0** (see [Compatibility](#compatibility)). The reasoning machinery — the state machine, the prompting knowledge base, the deterministic grounding and refinement logic — is carried over unchanged; only the platform glue was adapted (see [Port notes](#the-kimi-port)).
+This repository is a faithful port of apex (originally a Claude Code plugin) to **Kimi Code**, packaged as the skill `/skill:apex`. Built on 0.4.0 and **verified working on 0.4.0, 0.5.0, 0.16.0, and 0.17.1** (see [Compatibility](#compatibility)). The reasoning machinery — the state machine, the prompting knowledge base, the deterministic grounding and refinement logic — is carried over unchanged; only the platform glue was adapted (see [Port notes](#the-kimi-port)).
 
 ---
 
@@ -17,15 +17,17 @@ This repository is a faithful port of apex (originally a Claude Code plugin) to 
 
 ## Requirements
 
-- **Kimi Code 0.4.0, 0.5.0, or 0.16.0** (the `kimi` binary, typically at `~/.kimi-code/bin/kimi`) — verified on all three.
+- **Kimi Code 0.4.0, 0.5.0, 0.16.0, or 0.17.1** (the `kimi` binary, typically at `~/.kimi-code/bin/kimi`) — verified on all four.
 - `python3` (standard library only — no third-party packages).
 - `rsync` (used by the installer for a clean, symlink-free copy).
 
 ## Compatibility
 
-Verified working on **Kimi Code 0.4.0, 0.5.0, and 0.16.0**. On each version, all primitives apex relies on are present — the native `Skill` tool, the `Agent` tool with the built-in `coder`/`explore`/`plan` subagent types, the `${KIMI_SKILL_DIR}` injection, the `installed.json` plugin loader, and `AskUserQuestion` — and a live registry-loaded `/skill:apex` run drives the full state machine to `DONE` with a schema-clean, `verdict: OK` critic.
+Verified working on **Kimi Code 0.4.0, 0.5.0, 0.16.0, and 0.17.1**. All primitives apex relies on are present on every version — the native `Skill` tool, the `Agent` tool with the built-in `coder`/`explore`/`plan` subagent types, the `${KIMI_SKILL_DIR}` injection, the `installed.json` plugin loader, and `AskUserQuestion`. On 0.4.0 / 0.5.0 / 0.16.0 a live registry-loaded `/skill:apex` run drives the full state machine to `DONE` with a schema-clean, `verdict: OK` critic; on 0.17.1 the same full pipeline — `Agent(explore)` scout, the Python core, the `Agent(plan)` red-team critic, and the adversarial refine loop — runs unchanged (see the 0.17.1 note below).
 
 **0.16.0 notes** (binary-verified 2026-06-17; details in [`PORT_NOTES.md`](PORT_NOTES.md)): the core contracts are unchanged — `${KIMI_SKILL_DIR}` is still substituted into skill content, both `.kimi-plugin/plugin.json` and a root `kimi.plugin.json` manifest are accepted, `/plugins reload` still exists, and the tool names match. **One behavioral change required a fix:** the `explore` subagent is now strictly read-only (it cannot write files), so the GROUNDED stage no longer asks the scout to *write* `context.json` — the scout *returns* the digest and the orchestrator persists it (the same return-then-persist pattern already used for the critic). The change is backward-compatible with 0.4.0/0.5.0. Note: if another installed plugin (e.g. **superpowers**) declares a `sessionStart` skill, its startup directive is injected into every session and may nudge the model before apex runs; correctness is unaffected.
+
+**0.17.1 notes** (binary + live verified 2026-06-18): no surface changes — 0.17.0 added the server-hosted web UI (`kimi server` / `kimi web`) and 0.17.1 was patch fixes; neither touched anything apex uses. The registry still loads the plugin; `${KIMI_SKILL_DIR}` substitution and the `Skill` / `Agent` (`coder`/`explore`/`plan`) / `AskUserQuestion` tools are all present (binary-verified); and the Python core (`ctxstore` / `validate` / `verdict` / `pathcheck`) runs unchanged on Python 3.12. A live `/skill:apex` run exercises the entire state machine on 0.17.1 — INIT → CLARIFY → TRIAGE → GROUND (scout via `Agent(explore)` returning a schema-valid `context.json`, `validate` clean) → DRAFT → VERIFY (red-team critic via `Agent(plan)`) → the adversarial refine loop → human-gated output — identically to 0.16.0.
 
 Note for 0.5.0: `--prompt` can no longer be combined with `--yolo` (`error: Cannot combine --prompt with --yolo`). This does not affect apex — for non-interactive runs use `kimi -p "..."` on its own; `-p` already runs the full agentic loop.
 
