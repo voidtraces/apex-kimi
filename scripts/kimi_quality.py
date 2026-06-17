@@ -20,6 +20,8 @@ port stays in sync with upstream while isolating the Kimi-specific divergence.
 """
 from __future__ import annotations
 
+import json
+import pathlib
 import re
 
 _DIMENSIONS = (
@@ -145,3 +147,41 @@ def lint_draft(draft_text: str) -> list[dict]:
 def _d(did: str, category: str, severity: str, location: str, fix: str) -> dict:
     return {"id": did, "category": category, "severity": severity,
             "location": location, "fix": fix}
+
+
+def refine_passes_done(base: str, run_id: str) -> int:
+    """Deterministic refine-pass count for the MAX_PASSES cap (model-independent).
+
+    ``verdict.should_refine(critic, passes)`` enforces the hard cap only if the
+    orchestrator passes a truthful ``passes``. On a runtime where the model may
+    not reliably track that counter across turns, the cap can silently fail to
+    engage (observed live: an unbounded refine churn while each adversarial
+    critic kept finding defects). This derives the count from the telemetry that
+    every ``ctxstore.advance`` writes: the number of DRAFTED transitions that
+    occur *after* the first VERIFIED for this run — i.e. the re-drafts produced
+    by the refine loop (the initial drafting before the first verify does not
+    count). Trusting the ledger instead of the model makes the cap robust; it
+    errs conservative (a stray same-pass re-save counts up), which only ever
+    stops the loop sooner, never later.
+    """
+    log = pathlib.Path(base) / "log.jsonl"
+    if not log.exists():
+        return 0
+    seen_verified = False
+    passes = 0
+    for line in log.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entry = json.loads(line)
+        except ValueError:
+            continue
+        if entry.get("run_id") != run_id:
+            continue
+        stage = entry.get("stage")
+        if stage == "VERIFIED":
+            seen_verified = True
+        elif stage == "DRAFTED" and seen_verified:
+            passes += 1
+    return passes
