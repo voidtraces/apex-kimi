@@ -111,9 +111,9 @@ The persistence base is `.apex` in the current working directory. Load the skill
 
 ### REFINE?
 - ```
-  PYTHONPATH="${KIMI_SKILL_DIR}/../.." python3 -c "from scripts import verdict; import json,sys; c=json.load(open('.apex/<run_id>/critic.json')); print(verdict.should_refine(c, <passes>))"
+  PYTHONPATH="${KIMI_SKILL_DIR}/../.." python3 -c "import json; from scripts import verdict, kimi_quality; c=json.load(open('.apex/<run_id>/critic.json')); p=kimi_quality.refine_passes_done('.apex','<run_id>'); print('refine_passes_done='+str(p)); print('should_refine='+str(verdict.should_refine(c, p)))"
   ```
-  (use merged critic with backstop defects). `True` → re-DRAFT applying each CRITICAL/HIGH `fix`, increment `refine_passes`, re-VERIFY. `False` → continue. Hard cap enforced by `should_refine` (MAX_PASSES=2).
+  (use the merged critic with backstop defects). The pass count is computed **deterministically from the telemetry** by `kimi_quality.refine_passes_done` — you do NOT track it yourself — so the `MAX_PASSES=2` hard cap always engages even if you lose count across turns. `should_refine=True` → re-DRAFT applying each CRITICAL/HIGH `fix`, then re-VERIFY. `should_refine=False` → continue.
 - → This is a decision, not a pause: on `True` loop back to **DRAFTED**, on `False` proceed immediately to **OUTPUT**. Never end your turn here.
 
 ### OUTPUT
